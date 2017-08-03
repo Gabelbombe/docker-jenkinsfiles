@@ -46,18 +46,21 @@ function get_plugin_version ()
 ## can then change this, upgrade plugins, etc.
 function copy_reference_file ()
 {
+  ## NOTE: failure on set -e? investigate tyhis a bit later on, we might need a declaritive in here that isn't on the promptout
                                       ## NOTE: References are from: http://www.tldp.org/LDP/abs/html/parameter-substitution.html
   f="${1%/}"                          ## Arbitrary Matching    REF: 10-12.
   b="${f%.override}"                  ## Pattern Matching R->L REF: 10-10.
   rel="${b:23}"                       ## Expand from offset 23 REF: 10-11.
   version_marker="${rel}.version_from_image"
   dir=$(dirname "${b}")
-  local action ;
-  local reason ;
-  local container_version ;
-  local image_version ;
-  local marker_version ;
+
+  local action
+  local reason
+  local container_version
+  local image_version
+  local marker_version
   local log ; log=false
+
   if [[ ${rel} == plugins/*.jpi ]] ; then
     container_version=$(get_plugin_version "${JENKINS_HOME}/${rel}")
     image_version=$(get_plugin_version "${f}")
