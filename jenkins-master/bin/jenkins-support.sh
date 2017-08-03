@@ -10,21 +10,21 @@ function versionLT ()
   local q2 ; q2=$(echo -e "${2}" |cut -s -d '-' -f 2-)
 
   if [ "${v1}" = "${v2}" ] ; then
-      if [ "${q1}" = "${q2}" ] ; then
-          return 1
+    if [ "${q1}" = "${q2}" ] ; then
+      return 1
+    else
+      if [ -z "${q1}" ] ; then
+        return 1
       else
-          if [ -z "${q1}" ] ; then
-              return 1
-          else
-              if [ -z "${q2}" ] ; then
-                  return 0
-              else
-                  [ "${q1}" = "$(echo -e "${q1\n$q2}" |sort -V |head -n1)" ]    ## ...
-              fi
-          fi
+        if [ -z "${q2}" ] ; then
+          return 0
+        else
+          [ "${q1}" = "$(echo -e "${q1\n$q2}" |sort -V |head -n1)" ]  ## ...
+        fi
       fi
+    fi
   else
-      [ "${v1}" = "$(echo -e "${v1}\n${v2}" | sort -V | head -n1)" ]            ## ...
+    [ "${v1}" = "$(echo -e "${v1}\n${v2}" | sort -V | head -n1)" ]      ## ...
   fi
 }
 
@@ -35,7 +35,7 @@ function get_plugin_version ()
   local archive ; archive="${1}"
   local version ; version=$(unzip -p "${archive}" META-INF/MANIFEST.MF |grep "^Plugin-Version: " |sed -e 's#^Plugin-Version: ##')
 
-    version=${version%%[[:space:]]}
+  version=${version%%[[:space:]]}
 
   echo -e "${version}" ## out
 }
@@ -45,94 +45,94 @@ function get_plugin_version ()
 ## Don't override, as this is just a reference setup, and use from UI
 ## can then change this, upgrade plugins, etc.
 function copy_reference_file ()
- {
-                                                  ## NOTE: References are from: http://www.tldp.org/LDP/abs/html/parameter-substitution.html
-    f="${1%/}"                                    ## Arbitrary Matching         REF: 10-12.
-    b="${f%.override}"                            ## Pattern Matching R->L      REF: 10-10.
-    rel="${b:23}"                                 ## Expand from offset 23      REF: 10-11.
-    version_marker="${rel}.version_from_image"
-    dir=$(dirname "${b}")
-    local action ;
-    local reason ;
-    local container_version ;
-    local image_version ;
-    local marker_version ;
-    local log ; log=false
-    if [[ ${rel} == plugins/*.jpi ]] ; then
-        container_version=$(get_plugin_version "${JENKINS_HOME}/${rel}")
-        image_version=$(get_plugin_version "${f}")
+{
+                                      ## NOTE: References are from: http://www.tldp.org/LDP/abs/html/parameter-substitution.html
+  f="${1%/}"                          ## Arbitrary Matching    REF: 10-12.
+  b="${f%.override}"                  ## Pattern Matching R->L REF: 10-10.
+  rel="${b:23}"                       ## Expand from offset 23 REF: 10-11.
+  version_marker="${rel}.version_from_image"
+  dir=$(dirname "${b}")
+  local action ;
+  local reason ;
+  local container_version ;
+  local image_version ;
+  local marker_version ;
+  local log ; log=false
+  if [[ ${rel} == plugins/*.jpi ]] ; then
+    container_version=$(get_plugin_version "${JENKINS_HOME}/${rel}")
+    image_version=$(get_plugin_version "${f}")
 
-        if [[ -e ${JENKINS_HOME}/${version_marker} ]] ; then
-            marker_version=$(cat "${JENKINS_HOME}/${version_marker}")
-            if versionLT "${marker_version}" "${container_version}" ; then
-                action="SKIPPED"
-                reason="Installed version (${container_version}) has been manually upgraded from initial version (${marker_version})"
-                log=true
-            else
-                if [[ "${image_version}" == "${container_version}" ]] ; then
-                    action="SKIPPED"
-                    reason="Version from image is the same as the installed version ${image_version}"
-                else
-                    if versionLT "${image_version}" "${container_version}" ; then
-                        action="SKIPPED"
-                        log=true
-                        reason="Image version (${image_version}) is older than installed version (${container_version})"
-                    else
-                        action="UPGRADED"
-                        log=true
-                        reason="Image version (${image_version}) is newer than installed version (${container_version})"
-                    fi
-                fi
-            fi
+    if [[ -e ${JENKINS_HOME}/${version_marker} ]] ; then
+      marker_version=$(cat "${JENKINS_HOME}/${version_marker}")
+      if versionLT "${marker_version}" "${container_version}" ; then
+        action="SKIPPED"
+        reason="Installed version (${container_version}) has been manually upgraded from initial version (${marker_version})"
+        log=true
+      else
+        if [[ "${image_version}" == "${container_version}" ]] ; then
+          action="SKIPPED"
+          reason="Version from image is the same as the installed version ${image_version}"
         else
-            if [[ -n "${TRY_UPGRADE_IF_NO_MARKER}" ]] ; then
-                if [[ "${image_version}" == "${container_version}" ]] ; then
-                    action="SKIPPED"
-                    reason="Version from image is the same as the installed version ${image_version} (no marker found)"
-                    ## Add marker for next time
-                    echo -e "${image_version}" > "${JENKINS_HOME}/${version_marker}"
-                else
-                    if versionLT "${image_version}" "${container_version}"; then
-                        action="SKIPPED"
-                        log=true
-                        reason="Image version (${image_version}) is older than installed version (${container_version}) (no marker found)"
-                    else
-                        action="UPGRADED"
-                        log=true
-                        reason="Image version (${image_version}) is newer than installed version (${container_version}) (no marker found)"
-                    fi
-                fi
-            fi
-        fi
-        if [[ ! -e ${JENKINS_HOME}/${rel} || "${action}" == "UPGRADED" || $f = *.override ]] ; then
-            action=${action:-"INSTALLED"}   ## Default values to: INSTALLED if isempty
-            log=true
-            mkdir -p "${JENKINS_HOME}/${dir:23}"
-            cp -r "${f}" "${JENKINS_HOME}/${rel}"
-
-            ## pin plugins on initial copy
-            touch "${JENKINS_HOME}/${rel}.pinned"
-
-            echo -e "${image_version}" > "${JENKINS_HOME}/${version_marker}"
-            reason=${reason:-$image_version}
-        else
-            action=${action:-"SKIPPED"}     ## Defaults value to contents of ${image_version}
-        fi
-    else
-        if [[ ! -e ${JENKINS_HOME}/${rel} || $f = *.override ]] ; then
-            action="INSTALLED"
-            log=true
-            mkdir -p "${JENKINS_HOME}/${dir:23}"
-            cp -r "${f}" "${JENKINS_HOME}/${rel}";
-        else
+          if versionLT "${image_version}" "${container_version}" ; then
             action="SKIPPED"
+            log=true
+            reason="Image version (${image_version}) is older than installed version (${container_version})"
+          else
+            action="UPGRADED"
+            log=true
+            reason="Image version (${image_version}) is newer than installed version (${container_version})"
+          fi
         fi
-    fi
-    if [[ -n "${VERBOSE}" || "${log}" == "true" ]] ; then
-        if [ -z "${reason}" ] ; then
-            echo -e "${action} ${rel}" >> "${COPY_REFERENCE_FILE_LOG}"
+      fi
+    else
+      if [[ -n "${TRY_UPGRADE_IF_NO_MARKER}" ]] ; then
+        if [[ "${image_version}" == "${container_version}" ]] ; then
+          action="SKIPPED"
+          reason="Version from image is the same as the installed version ${image_version} (no marker found)"
+          ## Add marker for next time
+          echo -e "${image_version}" > "${JENKINS_HOME}/${version_marker}"
         else
-            echo -e "${action} ${rel} : ${reason}" >> "${COPY_REFERENCE_FILE_LOG}"
+          if versionLT "${image_version}" "${container_version}"; then
+            action="SKIPPED"
+            log=true
+            reason="Image version (${image_version}) is older than installed version (${container_version}) (no marker found)"
+          else
+            action="UPGRADED"
+            log=true
+            reason="Image version (${image_version}) is newer than installed version (${container_version}) (no marker found)"
+          fi
         fi
+      fi
     fi
+    if [[ ! -e ${JENKINS_HOME}/${rel} || "${action}" == "UPGRADED" || $f = *.override ]] ; then
+      action=${action:-"INSTALLED"}   ## Default values to: INSTALLED if isempty
+      log=true
+      mkdir -p "${JENKINS_HOME}/${dir:23}"
+      cp -r "${f}" "${JENKINS_HOME}/${rel}"
+
+      ## pin plugins on initial copy
+      touch "${JENKINS_HOME}/${rel}.pinned"
+
+      echo -e "${image_version}" > "${JENKINS_HOME}/${version_marker}"
+      reason=${reason:-$image_version}
+    else
+      action=${action:-"SKIPPED"}   ## Defaults value to contents of ${image_version}
+    fi
+  else
+    if [[ ! -e ${JENKINS_HOME}/${rel} || $f = *.override ]] ; then
+      action="INSTALLED"
+      log=true
+      mkdir -p "${JENKINS_HOME}/${dir:23}"
+      cp -r "${f}" "${JENKINS_HOME}/${rel}";
+    else
+      action="SKIPPED"
+    fi
+  fi
+  if [[ -n "${VERBOSE}" || "${log}" == "true" ]] ; then
+    if [ -z "${reason}" ] ; then
+      echo -e "${action} ${rel}" >> "${COPY_REFERENCE_FILE_LOG}"
+    else
+      echo -e "${action} ${rel} : ${reason}" >> "${COPY_REFERENCE_FILE_LOG}"
+    fi
+  fi
 }
