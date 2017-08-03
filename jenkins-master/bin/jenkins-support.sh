@@ -1,4 +1,4 @@
-#!/#!/usr/bin/env bash -eu
+#!/usr/bin/env bash -eu
 
 ## compare if version1 < version2
 function versionLT ()
