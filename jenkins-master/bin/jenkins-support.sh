@@ -19,7 +19,7 @@ function versionLT ()
         if [ -z "${q2}" ] ; then
           return 0
         else
-          [ "${q1}" = "$(echo -e "${q1\n$q2}" |sort -V |head -n1)" ]  ## ...
+          [ "${q1}" = "$(echo -e "${q1\n$q2}" |sort -V |head -n1)" ]    ## ...
         fi
       fi
     fi
