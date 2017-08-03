@@ -115,8 +115,8 @@ function copy_reference_file ()
 
       ## pin plugins on initial copy
       touch "${JENKINS_HOME}/${rel}.pinned"
-
       echo -e "${image_version}" > "${JENKINS_HOME}/${version_marker}"
+
       reason=${reason:-$image_version}
     else
       action=${action:-"SKIPPED"}   ## Defaults value to contents of ${image_version}
