@@ -88,6 +88,7 @@ COUNT_PLUGINS_INSTALLED=0
 
 while read spec || [ -n "$spec" ]; do
   plugin=(${spec//:/ })
+
   [[ ${plugin[0]} =~ ^\#    ]] && continue ## orig: ^# seems to be a sloppy evaluation
   [[ ${plugin[0]} =~ ^\s*$  ]] && continue
   [[ -z ${plugin[1]}        ]] && plugin[1]="latest"
