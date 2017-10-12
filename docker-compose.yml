@@ -1,0 +1,31 @@
+data:
+ build: jenkins-data
+master:
+ build: jenkins-master
+ volumes_from:
+  - data
+ ports:
+ - "50000:50000"
+# registry:
+#  image: registry:2
+#  ports: 
+#   - "5000:5000"
+#  environment:
+#   - REGISTRY_STORAGE=azure
+#   - REGISTRY_STORAGE_AZURE_ACCOUNTNAME=""
+#   - REGISTRY_STORAGE_AZURE_ACCOUNTKEY=""
+#   - REGISTRY_STORAGE_AZURE_CONTAINER="registry"
+nginx:
+ build: jenkins-nginx
+ ports:
+  - "80:80"
+  - "443:443"
+ links:
+  - master:jenkins-master
+  # - registry:registry
+ volumes:
+  - /etc/letsencrypt:/etc/letsencrypt
+slave:
+ build: jenkins-slave
+slavedotnet:
+ build: jenkins-dotnetcore-slave
